@@ -1,9 +1,46 @@
-FROM docker.io/library/golang:1.17-alpine3.14 AS builder
+FROM docker.io/library/golang:1.18-alpine3.15 AS builder
+
+WORKDIR /app
+
+RUN apk --no-cache add build-base linux-headers git bash ca-certificates libstdc++
+RUN git clone --depth 1 --branch feature/max-out-http-timeouts https://github.com/chainstack/erigon.git .
+
+RUN --mount=type=cache,target=/root/.cache \
+    --mount=type=cache,target=/tmp/go-build \
+    --mount=type=cache,target=/go/pkg/mod \
+    make all db-tools
 
 WORKDIR /app/build/bin
 RUN wget https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/v0.4.7/grpc_health_probe-linux-amd64 -P /app/build/bin/ && \
     mv /app/build/bin/grpc_health_probe-linux-amd64 /app/build/bin/grpc_health_probe && \
     chmod +x /app/build/bin/grpc_health_probe
 
-FROM thorax/erigon:v2022.06.06
+FROM docker.io/library/alpine:3.15
+
+RUN apk add --no-cache ca-certificates libstdc++ tzdata
 COPY --from=builder /app/build/bin/* /usr/local/bin/
+
+ARG PUID=1000
+ARG PGID=1000
+RUN adduser -H -u ${PUID} -g ${PGID} -D erigon
+RUN mkdir -p /home/erigon
+RUN mkdir -p /home/erigon/.local/share/erigon
+RUN chown -R erigon:erigon /home/erigon
+
+USER erigon
+
+EXPOSE 8545 8551 8546 30303 30303/udp 42069 42069/udp 8080 9090 6060
+
+# https://github.com/opencontainers/image-spec/blob/main/annotations.md
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
+LABEL org.label-schema.build-date=$BUILD_DATE \
+      org.label-schema.name="Erigon" \
+      org.label-schema.description="Erigon Ethereum Client" \
+      org.label-schema.url="https://torquem.ch" \
+      org.label-schema.vcs-ref=$VCS_REF \
+      org.label-schema.vcs-url="https://github.com/ledgerwatch/erigon.git" \
+      org.label-schema.vendor="Torquem" \
+      org.label-schema.version=$VERSION \
+      org.label-schema.schema-version="1.0"
