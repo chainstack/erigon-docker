@@ -5,5 +5,5 @@ RUN wget https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/v
     mv /app/build/bin/grpc_health_probe-linux-amd64 /app/build/bin/grpc_health_probe && \
     chmod +x /app/build/bin/grpc_health_probe
 
-FROM thorax/erigon:v2.60.6
+FROM erigontech/erigon:2.60.7
 COPY --from=builder /app/build/bin/* /usr/local/bin/
