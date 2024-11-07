@@ -5,7 +5,7 @@ RUN wget https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/v
     mv /app/build/bin/grpc_health_probe-linux-amd64 /app/build/bin/grpc_health_probe && \
     chmod +x /app/build/bin/grpc_health_probe
 
-FROM --platform=linux/amd64/v2 erigontech/erigon:v2.60.9
+FROM --platform=linux/amd64/v2 erigontech/erigon:v2.60.10
 USER root
 RUN apt update -y && \
     apt install -y netcat-openbsd=1.219-1 && \
